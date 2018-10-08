@@ -12,7 +12,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 
-#define PORT 1234
+#define PORT 1235
 
 //CONNECTS CLIENT TO SERVER
 int client_connect(char* server_ip, int port){

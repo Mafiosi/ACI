@@ -8,12 +8,14 @@
 #include <string.h>
 #include <assert.h>
 #include <unistd.h>
+#include <pthread.h>
 
 #include <netinet/in.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <stdlib.h>
 
-#define PORT 1234
+#define PORT 1235
 
 
 //INITIALIZE SERVER
@@ -57,18 +59,21 @@ void socket_write(int client_socket, char* str){
     }
 }
 
-
 //SERVER WILL PROESS DATA
-void server_process(int client_socket){
+void server_process(int *client_sock){
 
     int str_len = 255;
     char str[str_len];
+    int client_socket = *(int*) client_sock;
 
     while(1){
 
         int len = recv(client_socket, str, str_len, 0);
         printf("Received: %s - Lenght: %d\n", str, len);
-        if (len == 5 && str[0] == "q"){
+
+        if (len == 2 && str[0] == 'q'){
+            printf("Client Disconnected\n");
+            fflush(stdout);
             break;
         }
 
@@ -82,20 +87,33 @@ void server_process(int client_socket){
 //SERVER WILL READ ALL SOCKETS CONNECTED
 void server_loop(int server_socket){
 
-    while(1){
+    int client_socket,*new_socket;
+    struct sockaddr_in cli_addr;
+    socklen_t client_addr_len = sizeof(cli_addr);
 
-        struct sockaddr_in cli_addr;
-        socklen_t client_addr_len = sizeof(cli_addr);
+    while(client_socket = accept(server_socket, (struct sockaddr *) &cli_addr, &client_addr_len)){
 
-        int new_socket = accept(server_socket, (struct sockaddr *) &cli_addr, &client_addr_len);
-        if( new_socket == -1){
-            break;
+        printf("Connection Accepted\n");
+
+        pthread_t sniffer_thread;
+        new_socket = malloc(1);
+        *new_socket = client_socket;
+
+        if(pthread_create(&sniffer_thread, NULL, server_process, (void*) new_socket) < 0){
+
+            printf("Error creating Thread");
+            return;
         }
 
-        printf("Connected to Client\n");
-        server_process(new_socket);
-        printf("Disconnected from client\n");
     }
+
+    if( client_socket < 0){
+        printf("Error Connecting to Socket");
+        return;
+    }
+
+    printf("Disconnected from client\n");
+    return;
 }
 
 
@@ -105,6 +123,5 @@ int main(int argc, char* argv[]){
     int server_socket = server_init("127.0.0.1", PORT);
     printf("Server has Started\n");
     server_loop(server_socket);
-
 
 }
