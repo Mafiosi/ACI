@@ -3,14 +3,7 @@
 //
 
 //LIBRARIES
-#include <stdio.h>
-#include <string.h>
-#include <assert.h>
-#include <unistd.h>
-
-#include <netinet/in.h>
-#include <sys/types.h>
-#include <sys/socket.h>
+#include "general.h"
 
 #define PORT 1235
 
